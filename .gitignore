@@ -1,0 +1,14 @@
+**/www
+**/node_modules
+**/dist
+*.zip
+*.log*
+**/build
+**/bin
+**/target
+.classpath
+.project
+.settings
+.gradletasknamecache
+.gradle/
+
