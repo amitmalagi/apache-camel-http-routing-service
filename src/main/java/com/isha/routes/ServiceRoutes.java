@@ -49,19 +49,15 @@ public class ServiceRoutes extends RouteBuilder {
                 // instead as an exception that will get thrown and thus the route breaks
             	HttpHostConnectException cause = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, HttpHostConnectException.class);
                 exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 503);
+                exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
                 
                 ErrorResponse errorResponse = new ErrorResponse(
                 		"SERVICE_UNAVAILABLE", cause.getLocalizedMessage(), Arrays.asList(cause.getMessage()));
-                ObjectMapper mapper = new ObjectMapper();
                 
-                try {
-                	exchange.getOut().setBody(mapper.writeValueAsString(errorResponse));
-                    exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
-                } catch (Exception ex) {
-                	LOG.error(ex.toString());
-                }
+                exchange.getOut().setBody(errorResponse);
             }
-        });
+        })
+        .marshal().json(JsonLibrary.Jackson, ErrorResponse.class);
         
         restConfiguration()
         .component("jetty")
@@ -89,5 +85,48 @@ public class ServiceRoutes extends RouteBuilder {
         .marshal().json(JsonLibrary.Jackson, SigninCredentials.class)
         .to("http4://localhost:9443/signin?bridgeEndpoint=true&amp;throwExceptionOnFailure=false")
         .unmarshal().json(JsonLibrary.Jackson, SigninResponse.class);
+        
+        //Mock providerA endpoint
+        from("jetty:http://localhost:9443/signin?httpMethodRestrict=POST")
+        .unmarshal().json(JsonLibrary.Jackson, SigninCredentials.class)
+        .to("direct:providerAcbr");
+        
+        from("direct:providerAcbr")
+        .choice()
+        	.when().simple("${body.email} == 'isha@sc.in'")
+        	  	.to("direct:signinResponse")
+        	.otherwise()
+        		.to("direct:errorResponse")
+        .end();
+        	
+    	from("direct:signinResponse")
+    	.process(new Processor() {
+            public void process(Exchange exchange) {
+            	
+                exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 200);
+                exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
+                
+                SigninResponse response = new SigninResponse("qwerty");
+                exchange.getOut().setBody(response);
+            }
+        })
+    	.marshal().json(JsonLibrary.Jackson, SigninResponse.class);
+    	
+    	from("direct:errorResponse")
+    	.process(new Processor() {
+    		public void process(Exchange exchange) {
+            	
+                exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);
+                exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
+                
+                String msg = "Email not found";
+                ErrorResponse response = new ErrorResponse("NOT_FOUND", msg, Arrays.asList(msg));
+                exchange.getOut().setBody(response);
+            }
+    	})
+    	.marshal().json(JsonLibrary.Jackson, ErrorResponse.class);
+        
+        	
+        	
     }
 }
