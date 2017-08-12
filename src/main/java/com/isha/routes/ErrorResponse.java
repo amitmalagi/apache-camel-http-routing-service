@@ -1,19 +1,23 @@
 package com.isha.routes;
 
+import java.util.List;
+
 public class ErrorResponse {
 	
-	private String message;
 	private String status;
+	private String message;
+	private List<String> errors;
 
 	public ErrorResponse() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public ErrorResponse(String message, String status) {
+	public ErrorResponse(String status, String message, List<String> errors) {
 		super();
-		this.message = message;
 		this.status = status;
+		this.message = message;
+		this.errors = errors;
 	}
 
 	public String getMessage() {
@@ -31,4 +35,13 @@ public class ErrorResponse {
 	public void setStatus(String status) {
 		this.status = status;
 	}
+
+	public List<String> getErrors() {
+		return errors;
+	}
+
+	public void setErrors(List<String> errors) {
+		this.errors = errors;
+	}
+	
 }
