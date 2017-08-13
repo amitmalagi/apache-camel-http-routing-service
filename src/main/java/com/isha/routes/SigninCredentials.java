@@ -4,18 +4,18 @@ public class SigninCredentials {
 	
 	private String email;
 	private String passwd;
-	private String vendor;
+	private String provider;
 	
 	public SigninCredentials() {
 		super();
 		// TODO Auto-generated constructor stub
 	}
 
-	public SigninCredentials(String email, String passwd, String vendor) {
+	public SigninCredentials(String email, String passwd, String provider) {
 		super();
 		this.email = email;
 		this.passwd = passwd;
-		this.vendor = vendor;
+		this.provider = provider;
 	}
 
 	public String getEmail() {
@@ -34,12 +34,12 @@ public class SigninCredentials {
 		this.passwd = passwd;
 	}
 
-	public String getVendor() {
-		return vendor;
+	public String getProvider() {
+		return provider;
 	}
 
-	public void setVendor(String vendor) {
-		this.vendor = vendor;
+	public void setProvider(String provider) {
+		this.provider = provider;
 	}
 	
 	

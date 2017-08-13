@@ -1,5 +1,6 @@
 package com.isha.routes;
 
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -59,6 +60,25 @@ public class ServiceRoutes extends RouteBuilder {
         })
         .marshal().json(JsonLibrary.Jackson, ErrorResponse.class);
         
+        onException(SocketTimeoutException.class)
+        .handled(true)
+        .process(new Processor() {
+            public void process(Exchange exchange) {
+                // copy the caused exception values to the exchange as we want the response in the regular exchange
+                // instead as an exception that will get thrown and thus the route breaks
+            	SocketTimeoutException cause = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, SocketTimeoutException.class);
+                exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 503);
+                exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
+                
+                ErrorResponse errorResponse = new ErrorResponse(
+                		"SERVICE_UNAVAILABLE", cause.getLocalizedMessage(), Arrays.asList(cause.getMessage()));
+                
+                exchange.getOut().setBody(errorResponse);
+            }
+        })
+        .marshal().json(JsonLibrary.Jackson, ErrorResponse.class);
+        
+        //Content based router to providers
         restConfiguration()
         .component("jetty")
         .host("localhost")
@@ -73,7 +93,7 @@ public class ServiceRoutes extends RouteBuilder {
         
         from("direct:signinRoutes")
         .choice()
-        	.when().simple("${body.vendor} == 'providerA'")
+        	.when().simple("${body.provider} == 'providerA'")
         	.log("Calling providerA signin api")
         	.to("direct:providerARoute")
         .end();
@@ -83,7 +103,7 @@ public class ServiceRoutes extends RouteBuilder {
         .setHeader("Accept", constant("application/json"))
         .setBody().simple("${body}")
         .marshal().json(JsonLibrary.Jackson, SigninCredentials.class)
-        .to("http4://localhost:9443/signin?bridgeEndpoint=true&amp;throwExceptionOnFailure=false")
+        .to("http4://localhost:9443/signin?bridgeEndpoint=true&throwExceptionOnFailure=false&httpClient.SocketTimeout=1000")
         .unmarshal().json(JsonLibrary.Jackson, SigninResponse.class);
         
         //Mock providerA endpoint
@@ -93,13 +113,14 @@ public class ServiceRoutes extends RouteBuilder {
         
         from("direct:providerAcbr")
         .choice()
-        	.when().simple("${body.email} == 'isha@sc.in'")
+        	.when().simple("${body.email} == 'isha@sc.in' && ${body.passwd} == 'isha123'")
         	  	.to("direct:signinResponse")
         	.otherwise()
         		.to("direct:errorResponse")
         .end();
         	
     	from("direct:signinResponse")
+    	.delay(100000)
     	.process(new Processor() {
             public void process(Exchange exchange) {
             	
@@ -116,11 +137,11 @@ public class ServiceRoutes extends RouteBuilder {
     	.process(new Processor() {
     		public void process(Exchange exchange) {
             	
-                exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 404);
+                exchange.getOut().setHeader(Exchange.HTTP_RESPONSE_CODE, 401);
                 exchange.getOut().setHeader(Exchange.CONTENT_TYPE, "application/json");
                 
-                String msg = "Email not found";
-                ErrorResponse response = new ErrorResponse("NOT_FOUND", msg, Arrays.asList(msg));
+                String msg = "Email or password is incorrect";
+                ErrorResponse response = new ErrorResponse("UNAUTHORIZED", msg, Arrays.asList(msg));
                 exchange.getOut().setBody(response);
             }
     	})
