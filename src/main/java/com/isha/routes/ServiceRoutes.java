@@ -5,9 +5,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.camel.Exchange;
-import org.apache.camel.LoggingLevel;
 import org.apache.camel.Processor;
-import org.apache.camel.builder.BuilderSupport;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.common.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
@@ -15,8 +13,6 @@ import org.apache.camel.model.rest.RestBindingMode;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ServiceRoutes extends RouteBuilder {
 
@@ -26,9 +22,6 @@ public class ServiceRoutes extends RouteBuilder {
     public void configure() throws Exception {
 
         LOG.info("Starting routes");
-        
-        
-        
         
         //To simulate this exception, change the value of email or passwd fields in http producer endpoint
         onException(HttpOperationFailedException.class)
@@ -48,7 +41,6 @@ public class ServiceRoutes extends RouteBuilder {
                 exchange.getOut().setBody(cause.getResponseBody());
             }
         });
-        //.marshal().json(JsonLibrary.Jackson, ErrorResponse.class);
         
         //To simulate connection timeout exception, either change the provider hostname or port and send a request from the client
         onException(HttpHostConnectException.class)
