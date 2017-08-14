@@ -1,6 +1,6 @@
 # apache-camel-http-routing-service
 A sample HTTP routing service to demonstrate routing of http requests to external providers based on request content. 
-Demonstrates handling of success and error responses from external providers, connection timeout and socket timeout.
+Demonstrates handling of success and error responses from external providers, connection and socket timeouts.
 
 Building and running the demo using Maven
 -----------------------------------------
@@ -11,6 +11,4 @@ Using either UNIX or Windows:
 
   mvn -Pservice  (from one command line window)
   
-  To be done
   
-  1. Sample client implementation
